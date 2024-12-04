@@ -1,3 +1,22 @@
+<script lang="ts">
+    import { onMount } from "svelte";
+    import {current_price} from "$lib/store/price"
+
+    onMount(async () => {
+        async function update_price() {
+            let response = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT")
+            let json = await response.json()
+            console.log(json.price) 
+            $current_price = parseFloat(json.price)
+        }
+
+        await update_price()
+        setInterval(async () => {
+            await update_price()
+        }, 15_000)
+    })
+</script>
+
 <div class="tradingview-widget-container" style="height:600px; width:100%">
     <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
     <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">Track all markets on TradingView</span></a></div>

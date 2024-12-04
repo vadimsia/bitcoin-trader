@@ -17,7 +17,7 @@ export interface IOrder {
     state: EOrderState
     amount: number
     entry_price: number
-    leverege: number
+    leverage: number
     take_profit: number
     stop_loss: number
 
