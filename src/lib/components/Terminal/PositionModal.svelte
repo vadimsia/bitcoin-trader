@@ -4,6 +4,9 @@
 
     import {current_price} from "$lib/store/price"
     import { onMount } from 'svelte';
+    import { user } from '$lib/store/user';
+    import { EOrderState, EOrderType, type IOrder } from '$lib/Order';
+    import { getCookieByName } from '$lib';
 
     export let order_modal = 0
 
@@ -44,6 +47,45 @@
         entry_price = $current_price
     }
 
+    async function getBalance() {
+        if ($user.balance > 5) {
+            alert('Available with <5$ balance only')
+            return
+        }
+
+        await fetch('api/user/balance')
+        location.reload()
+    }
+
+
+    async function openPosition(type: EOrderType) {
+        let order: IOrder = {
+            id: 0,
+            order_type: type,
+            state: EOrderState.WAITING,
+            amount: amount,
+            entry_price: entry_price,
+            leverage: leverage,
+            take_profit: take_profit,
+            stop_loss: stop_loss
+        }
+
+        let response = await fetch('/api/terminal/open_position', {
+            body: JSON.stringify(order),
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookieByName('csrftoken')
+            },
+            method: 'POST'
+        })
+
+        if (response.status === 200)
+            location.reload()
+
+    }
+
+
     onMount(() => {
         setTimeout(setCurrentPrice, 3000)
     })
@@ -58,12 +100,15 @@
             </span>
             <a href="#" on:click={() => order_modal = 0}><Fa icon={faClose}/></a>
         </div>
+        <div class="current-balance">
+            Available balance: {$user.balance}$ <button on:click={getBalance}><u>Get for free</u></button>
+        </div>
         <div class="current-price">
             Current price: {$current_price}
         </div>
         <div class="entry-price">
             Entry price: <input type="number" bind:value={entry_price} />$
-            <button class="underline" on:click={() => entry_price = parseFloat($current_price.toFixed(2))}>set current</button>
+            <button class="underline" on:click={() => entry_price = parseFloat($current_price.toFixed(2))}>Set current</button>
         </div>
         <div class="leverege">
             Leverage: <input type="range" min="1" max="50" bind:value={leverage}> {leverage}x
@@ -85,7 +130,7 @@
                 Stop-Loss: <input type="number" max={$current_price} bind:value={stop_loss}> $ = <span style="color: red;">{calcLongTPSL(stop_loss)}$</span>
             </div>
         {/if}
-        <button class="underline">Open position</button>
+        <button class="underline" on:click={() => openPosition(EOrderType.LONG)}>Open position</button>
     </div>
 {:else if order_modal === -1}
     <span class="splitter mt-5 mb-5"></span>
@@ -96,12 +141,15 @@
             </span>
             <a href="#" on:click={() => order_modal = 0}><Fa icon={faClose}/></a>
         </div>
+        <div class="current-balance">
+            Available balance: {$user.balance}$ <button on:click={getBalance}><u>Get for free</u></button>
+        </div>
         <div class="current-price">
             Current price: {$current_price}
         </div>
         <div class="entry-price">
             Entry price: <input type="number" bind:value={entry_price} />$
-            <button class="underline" on:click={() => entry_price = parseFloat($current_price.toFixed(2))}>set current</button>
+            <button class="underline" on:click={() => entry_price = parseFloat($current_price.toFixed(2))}>Set current</button>
         </div>
         <div class="leverege">
             Leverage: <input type="range" min="1" max="50" bind:value={leverage}> {leverage}x
@@ -123,7 +171,7 @@
                 Stop-Loss: <input type="number" min={$current_price} bind:value={stop_loss}> $ = <span style="color: red;">{calcShortTPSL(stop_loss)}$</span>
             </div>
         {/if}
-        <button class="underline">Open position</button>
+        <button class="underline" on:click={() => openPosition(EOrderType.SHORT)}>Open position</button>
     </div>
 {/if}
 

@@ -13,7 +13,7 @@ export enum EOrderState {
 
 export interface IOrder {
     id: number
-    type: EOrderType
+    order_type: EOrderType
     state: EOrderState
     amount: number
     entry_price: number

@@ -1,12 +1,18 @@
 <script lang="ts">
     import Fa from 'svelte-fa'
     import { faBitcoinSign } from '@fortawesome/free-solid-svg-icons'
+    import { user } from '$lib/store/user';
 </script>
 
 <div class="header flex row justify-between items-center w-full p-5">
     <h1 class="text-3xl font-bold flex"><div style="color: orange"><Fa icon={faBitcoinSign} /></div>itcoinTrader Trainer</h1>
     <span>
-        <a class="sign-in" href="#">Sign in with Google</a>
+        {#if $user.id === -1}
+            <a class="sign-in" href="social-auth/login/google-oauth2/">Sign in with Google</a>
+        {:else}
+            Hello {$user.username}!
+            <button><u>Exit</u></button>
+        {/if}
     </span>
 </div>
 

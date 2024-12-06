@@ -1,31 +1,20 @@
 <script lang="ts">
+    import { getCookieByName } from "$lib";
     import {EOrderType, EOrderState} from "$lib/Order"
     import type {IOrder} from "$lib/Order"
 
     import {current_price} from "$lib/store/price"
+    import { onMount } from "svelte";
     
-    let orders: IOrder[] = [
-        {
-            id: 12312312,
-            type: EOrderType.LONG,
-            state: EOrderState.WAITING,
-            amount: 100,
-            entry_price: 200,
-            leverage: 5,
-            take_profit: 205,
-            stop_loss: 195
-        },
-        {
-            id: 12312312,
-            type: EOrderType.SHORT,
-            state: EOrderState.OPEN,
-            amount: 100,
-            entry_price: 200,
-            leverage: 1,
-            take_profit: 195,
-            stop_loss: 400
-        },
-    ]
+    let orders: IOrder[] = []
+
+    async function loadOrderBook() {
+        let response = await fetch('/api/terminal/orders')
+        if (response.status !== 200)
+            return
+
+        orders = await response.json()
+    }
 
     $: longLiquidation = (order: IOrder) => {
         let liq_perc = 100 / order.leverage / 100
@@ -54,6 +43,40 @@
     $: calcShortTPSL = (order: IOrder, tpsl: number) => {
         return (-(tpsl - order.entry_price) / order.entry_price * order.amount * order.leverage).toFixed(2)
     }
+
+    async function cancelPosition(order: IOrder) {
+        let response = await fetch('/api/terminal/cancel_position', {
+            body: JSON.stringify({id: order.id}),
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookieByName('csrftoken')
+            },
+            method: 'POST'
+        })
+
+        if (response.status === 200)
+            loadOrderBook()
+    }
+
+    async function closePosition(order: IOrder) {
+        let response = await fetch('/api/terminal/close_position', {
+            body: JSON.stringify({id: order.id}),
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookieByName('csrftoken')
+            },
+            method: 'POST'
+        })
+
+        if (response.status === 200)
+            await loadOrderBook()
+    }
+
+    onMount(async () => {
+        await loadOrderBook()
+    })
 </script>
 
 {#if orders.length === 0}
@@ -78,7 +101,7 @@
                 <tr>
                     <td><i>#{order.id}</i></td>        
                     <td>
-                        {#if order.type === EOrderType.LONG}
+                        {#if order.order_type === EOrderType.LONG}
                             <b style="color: green;">Long</b>
                         {:else}
                             <b style="color: red;">Short</b>
@@ -92,10 +115,12 @@
                         Base: {order.amount}$ x {order.leverage}
                     </td>
                     <td>
-                        {#if order.type === EOrderType.LONG}
-                            <span style="color: orange">{calcLongPnL(order)}$</span>
-                        {:else if order.type === EOrderType.SHORT}
-                            <span style="color: orange">{calcShortPnL(order)}$</span>
+                        {#if order.state === EOrderState.OPEN || order.state === EOrderState.CLOSED}
+                            {#if order.order_type === EOrderType.LONG}
+                                <span style="color: orange">{calcLongPnL(order)}$</span>
+                            {:else if order.order_type === EOrderType.SHORT}
+                                <span style="color: orange">{calcShortPnL(order)}$</span>
+                            {/if}
                         {/if}
                     </td>
                     <td>
@@ -103,20 +128,20 @@
                     </td>
                     <td>
                         <span style="color: red">
-                            {#if order.type === EOrderType.LONG}
+                            {#if order.order_type === EOrderType.LONG}
                                 {longLiquidation(order)}$
-                            {:else if order.type === EOrderType.SHORT}
+                            {:else if order.order_type === EOrderType.SHORT}
                                 {shortLiquidation(order)}$
                             {/if}
                         </span>
                     </td>
                     <td>
                         {order.take_profit}/{order.stop_loss}<br>
-                        {#if order.type === EOrderType.LONG}
+                        {#if order.order_type === EOrderType.LONG}
                             <span style="color: green">{calcLongTPSL(order, order.take_profit)}$</span>
                             /
                             <span style="color: red;">{calcLongTPSL(order, order.stop_loss)}$</span>
-                        {:else if order.type === EOrderType.SHORT}
+                        {:else if order.order_type === EOrderType.SHORT}
                             <span style="color: green">{calcShortTPSL(order, order.take_profit)}$</span>
                             /
                             <span style="color: red;">{calcShortTPSL(order, order.stop_loss)}$</span>
@@ -125,9 +150,9 @@
                     </td>
                     <td>
                         {#if order.state === EOrderState.WAITING}
-                            <a href="#"><u>Cancel</u></a>
+                            <button on:click={() => cancelPosition(order)}><u>Cancel</u></button>
                         {:else if order.state === EOrderState.OPEN}
-                            <a href="#"><u>Close</u></a>
+                            <button on:click={() => closePosition(order)}><u>Close</u></button>
                         {:else}
                             -
                         {/if}
