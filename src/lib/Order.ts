@@ -6,8 +6,9 @@ export enum EOrderType {
 export enum EOrderState {
     WAITING = 1,
     OPEN = 2,
-    CLOSED = 3,
-    CANCELED = 4
+    TO_BE_CLOSED = 3,
+    CLOSED = 4,
+    CANCELED = 5
 
 }
 

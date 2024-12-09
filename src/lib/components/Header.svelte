@@ -2,6 +2,11 @@
     import Fa from 'svelte-fa'
     import { faBitcoinSign } from '@fortawesome/free-solid-svg-icons'
     import { user } from '$lib/store/user';
+
+    async function exit() {
+        await fetch('/api/user/logout')
+        location.reload()
+    }
 </script>
 
 <div class="header flex row justify-between items-center w-full p-5">
@@ -11,7 +16,7 @@
             <a class="sign-in" href="social-auth/login/google-oauth2/">Sign in with Google</a>
         {:else}
             Hello {$user.username}!
-            <button><u>Exit</u></button>
+            <button on:click={exit}><u>Exit</u></button>
         {/if}
     </span>
 </div>

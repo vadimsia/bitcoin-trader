@@ -42,19 +42,26 @@
     }
 
     function setCurrentPrice() {
-        take_profit = $current_price
-        stop_loss = $current_price
         entry_price = $current_price
     }
 
-    async function getBalance() {
-        if ($user.balance > 5) {
-            alert('Available with <5$ balance only')
-            return
-        }
+    function enableTPSL() {
+        setTimeout(() => {
+            if (enable_tpsl) {
+                take_profit = $current_price
+                stop_loss = $current_price
+            } else {
+                take_profit = 0
+                stop_loss = 0
+            }
+        }, 100)
+    }
 
-        await fetch('api/user/balance')
-        location.reload()
+    async function getBalance() {
+        let response = await fetch('api/user/balance')
+        if (response.status === 200)
+            location.reload()
+        else alert('Available with <5$ balance and all closed orders only')
     }
 
 
@@ -82,7 +89,7 @@
 
         if (response.status === 200)
             location.reload()
-
+        else alert('Error while creating order')
     }
 
 
@@ -101,7 +108,7 @@
             <a href="#" on:click={() => order_modal = 0}><Fa icon={faClose}/></a>
         </div>
         <div class="current-balance">
-            Available balance: {$user.balance}$ <button on:click={getBalance}><u>Get for free</u></button>
+            Available balance: {$user.balance.toFixed(2)}$ <button on:click={getBalance}><u>Get for free</u></button>
         </div>
         <div class="current-price">
             Current price: {$current_price}
@@ -120,7 +127,7 @@
             Liquidation: <span style="color: orange;">{longLiquidation()}$</span>
         </div>
         <div class="enable-tpsl">
-            Enable take-profit/stop-loss: <input type="checkbox" bind:checked={enable_tpsl} />
+            Enable take-profit/stop-loss: <input type="checkbox" on:change={enableTPSL} bind:checked={enable_tpsl} />
         </div>
         {#if enable_tpsl}
             <div class="take-profit">
@@ -161,7 +168,7 @@
             Liquidation: <span style="color: orange;">{shortLiquidation()}$</span>
         </div>
         <div class="enable-tpsl">
-            Enable take-profit/stop-loss: <input type="checkbox" bind:checked={enable_tpsl} />
+            Enable take-profit/stop-loss: <input type="checkbox" on:change={enableTPSL} bind:checked={enable_tpsl} />
         </div>
         {#if enable_tpsl}
             <div class="take-profit">

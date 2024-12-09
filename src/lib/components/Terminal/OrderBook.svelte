@@ -76,6 +76,9 @@
 
     onMount(async () => {
         await loadOrderBook()
+        setInterval(async () => {
+            await loadOrderBook()
+        }, 15_000)
     })
 </script>
 
@@ -115,7 +118,7 @@
                         Base: {order.amount}$ x {order.leverage}
                     </td>
                     <td>
-                        {#if order.state === EOrderState.OPEN || order.state === EOrderState.CLOSED}
+                        {#if order.state === EOrderState.OPEN || order.state === EOrderState.CLOSED || order.state === EOrderState.TO_BE_CLOSED}
                             {#if order.order_type === EOrderType.LONG}
                                 <span style="color: orange">{calcLongPnL(order)}$</span>
                             {:else if order.order_type === EOrderType.SHORT}
@@ -137,11 +140,11 @@
                     </td>
                     <td>
                         {order.take_profit}/{order.stop_loss}<br>
-                        {#if order.order_type === EOrderType.LONG}
+                        {#if order.order_type === EOrderType.LONG && order.take_profit != 0}
                             <span style="color: green">{calcLongTPSL(order, order.take_profit)}$</span>
                             /
                             <span style="color: red;">{calcLongTPSL(order, order.stop_loss)}$</span>
-                        {:else if order.order_type === EOrderType.SHORT}
+                        {:else if order.order_type === EOrderType.SHORT && order.stop_loss != 0}
                             <span style="color: green">{calcShortTPSL(order, order.take_profit)}$</span>
                             /
                             <span style="color: red;">{calcShortTPSL(order, order.stop_loss)}$</span>
