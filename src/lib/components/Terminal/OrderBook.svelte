@@ -27,12 +27,14 @@
     }
 
     $: calcLongPnL = (order: IOrder) => {
-        let change_percent = ($current_price - order.entry_price) / order.entry_price
+        let base = order.state === EOrderState.CLOSED ? order.close_price : $current_price
+        let change_percent = (base - order.entry_price) / order.entry_price
         return (order.amount * order.leverage * change_percent).toFixed(2)
     }
 
     $: calcShortPnL = (order: IOrder) => {
-        let change_percent = -($current_price - order.entry_price) / order.entry_price
+        let base = order.state === EOrderState.CLOSED ? order.close_price : $current_price
+        let change_percent = -(base - order.entry_price) / order.entry_price
         return (order.amount * order.leverage * change_percent).toFixed(2)
     }
 
@@ -94,6 +96,7 @@
                 <th>Amount</th>
                 <th>PnL</th>
                 <th>Entry</th>
+                <th>Close</th>
                 <th>Liquid.</th>
                 <th>TP/SL</th>
                 <th>Actions</th>
@@ -128,6 +131,13 @@
                     </td>
                     <td>
                         {order.entry_price}$
+                    </td>
+                    <td>
+                        {#if order.close_price}
+                            {order.close_price}$
+                        {:else}
+                            -
+                        {/if}
                     </td>
                     <td>
                         <span style="color: red">
