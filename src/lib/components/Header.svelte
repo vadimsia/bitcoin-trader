@@ -20,6 +20,9 @@
         {/if}
     </span>
 </div>
+<div class="giveaway">
+    The first who will reach $100.000 on virtual balance will get 100 USDT! Telegram @ynggstr for contact.
+</div>
 
 <style>
     .sign-in:hover {
